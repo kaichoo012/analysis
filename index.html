@@ -1,0 +1,827 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="icon.png">
+<title>五十音暗号ツール</title>
+
+<style>
+:root {
+  --bg: #080a0f;
+  --panel: #11151e;
+  --line: #2b3445;
+  --text: #edf2fb;
+  --muted: #9aa8bd;
+  --accent: #70e1c1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(
+    ellipse at top,
+    #151c2a,
+    var(--bg) 55%
+  );
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+}
+
+.wrap {
+  width: min(900px, calc(100% - 32px));
+  margin: auto;
+  padding: 52px 0 36px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: .78rem;
+  letter-spacing: .2em;
+}
+
+h1 {
+  margin: 10px 0;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+}
+
+.sub, .hint, .foot {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.panel {
+  background: linear-gradient(160deg, #171d29, #0e121b);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: clamp(18px, 4vw, 28px);
+  box-shadow: 0 18px 55px #0005;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+  background: #090c12;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+
+.tab {
+  flex: 1;
+  border: 0;
+  border-radius: 9px;
+  padding: 12px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #202838;
+  color: var(--accent);
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 9px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 145px;
+  resize: vertical;
+  padding: 15px;
+  color: var(--text);
+  background: #080b11;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: .98rem/1.7 monospace;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px #70e1c122;
+}
+
+.hint {
+  font-size: .85rem;
+}
+
+.options {
+  margin: 17px 0 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+}
+
+.options input {
+  accent-color: var(--accent);
+}
+
+.options label {
+  margin: 0;
+  font-weight: normal;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+button.action {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 16px;
+  background: #202838;
+  color: var(--text);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.action:hover,
+.tab:hover {
+  filter: brightness(1.15);
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #07120f;
+}
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 25px 0 9px;
+}
+
+.result-head label {
+  margin: 0;
+}
+
+.status {
+  color: var(--muted);
+  font-size: .8rem;
+}
+
+#output {
+  min-height: 120px;
+  overflow-wrap: anywhere;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .wrap {
+    padding-top: 30px;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+
+  .result-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+</style>
+</head>
+
+<body>
+<main class="wrap">
+
+  <header>
+    <div class="eyebrow">JAPANESE KANA CIPHER</div>
+    <h1>五十音暗号ツール</h1>
+    <p class="sub">
+      入力した文章を暗号化・解読。<br>
+      処理はこのブラウザ内で完結します。
+    </p>
+  </header>
+
+  <section class="panel">
+
+    <div class="tabs">
+      <button
+        class="tab active"
+        id="encodeTab"
+        type="button"
+        aria-selected="true"
+      >
+        暗号化
+      </button>
+
+      <button
+        class="tab"
+        id="decodeTab"
+        type="button"
+        aria-selected="false"
+      >
+        解読
+      </button>
+    </div>
+
+    <label id="inputLabel" for="input">
+      暗号化する文章
+    </label>
+
+    <textarea
+      id="input"
+      placeholder="例：こんにちは123+456"
+    ></textarea>
+
+    <p class="hint" id="inputHint">
+      ひらがな、数字、対応する記号を入力してください。
+      対応していない文字は「??」になります。
+    </p>
+
+    <div class="options" id="dummyOption">
+      <input type="checkbox" id="fileA">
+      <label for="fileA">
+        File A（先頭にダミーコードを追加）
+      </label>
+    </div>
+
+    <div class="actions">
+      <button class="action primary" id="run" type="button">
+        暗号化する
+      </button>
+
+      <button class="action" id="swap" type="button">
+        入力と結果を入れ替え
+      </button>
+
+      <button class="action" id="clear" type="button">
+        クリア
+      </button>
+    </div>
+
+    <div class="result-head">
+      <label for="output">結果</label>
+      <span class="status" id="status" aria-live="polite">
+        結果がここに表示されます
+      </span>
+    </div>
+
+    <textarea
+      id="output"
+      readonly
+      placeholder="ここに結果が表示されます"
+    ></textarea>
+
+    <div class="actions">
+      <button class="action" id="copy" type="button">
+        結果をコピー
+      </button>
+    </div>
+
+  </section>
+
+  <p class="foot">
+    ※ 五十音・濁点・半濁点・小文字・伸ばし棒・
+    数字・記号・ダミーコードに対応しています。<br>
+    この暗号は簡易的な自作暗号です。
+  </p>
+
+</main>
+
+<script>
+// ========================================
+// 五十音表
+// ========================================
+
+const table = [
+  ["あ","い","う","え","お"],
+  ["か","き","く","け","こ"],
+  ["さ","し","す","せ","そ"],
+  ["た","ち","つ","て","と"],
+  ["な","に","ぬ","ね","の"],
+  ["は","ひ","ふ","へ","ほ"],
+  ["ま","み","む","め","も"],
+  ["や","","ゆ","","よ"],
+  ["ら","り","る","れ","ろ"],
+  ["わ","","を","","ん"]
+];
+
+// ========================================
+// 濁点
+// ========================================
+
+const dakutenBefore = [
+  "か","き","く","け","こ",
+  "さ","し","す","せ","そ",
+  "た","ち","つ","て","と",
+  "は","ひ","ふ","へ","ほ"
+];
+
+const dakutenAfter = [
+  "が","ぎ","ぐ","げ","ご",
+  "ざ","じ","ず","ぜ","ぞ",
+  "だ","ぢ","づ","で","ど",
+  "ば","び","ぶ","べ","ぼ"
+];
+
+// ========================================
+// 半濁点
+// ========================================
+
+const handakuBefore = ["は","ひ","ふ","へ","ほ"];
+const handakuAfter  = ["ぱ","ぴ","ぷ","ぺ","ぽ"];
+
+// ========================================
+// 小文字
+// ========================================
+
+const smallBefore = [
+  "あ","い","う","え","お",
+  "や","ゆ","よ","つ"
+];
+
+const smallAfter = [
+  "ぁ","ぃ","ぅ","ぇ","ぉ",
+  "ゃ","ゅ","ょ","っ"
+];
+
+// ========================================
+// 数字・記号の暗号コード
+// ========================================
+
+const symbolCodes = {
+  "0": "05",
+  "1": "06",
+  "2": "07",
+  "3": "08",
+  "4": "09",
+  "5": "15",
+  "6": "16",
+  "7": "17",
+  "8": "18",
+  "9": "19",
+
+  "+": "25",
+  "-": "26",
+  "(": "27",
+  ")": "28",
+  "/": "29",
+  "*": "35",
+  "=": "36",
+  "<": "37",
+  ">": "38"
+};
+
+// 数字・記号に予約したコード
+const reservedCodes = new Set(
+  Object.values(symbolCodes)
+);
+// 初期モードを暗号化に設定
+let mode = "encode";
+
+// ========================================
+// ダミー生成
+// 数字・記号用コードを除外する
+// ========================================
+
+function dummy() {
+  let code;
+
+  do {
+    const row = Math.floor(Math.random() * 10);
+    const col = 5 + Math.floor(Math.random() * 5);
+
+    code = `${row}${col}`;
+
+  } while (reservedCodes.has(code));
+
+  return code;
+}
+
+// ========================================
+// 暗号化
+// ========================================
+
+function encodeText(input, fileA) {
+  const chars = Array.from(input);
+  let output = "";
+
+  // 先頭ダミー
+  if (fileA) {
+    output += dummy();
+  }
+
+  for (let i = 0; i < chars.length; i++) {
+
+    // 途中ダミー
+    if (
+      i !== 0 &&
+      Math.floor(Math.random() * 3) === 0
+    ) {
+      output += dummy();
+    }
+
+    const ch = chars[i];
+    let found = false;
+
+    // 通常の五十音
+    outer:
+    for (let r = 0; r < 10; r++) {
+      for (let c = 0; c < 5; c++) {
+
+        if (table[r][c] === ch && ch !== "") {
+          output += `${r}${c}`;
+          found = true;
+          break outer;
+        }
+      }
+    }
+
+    if (found) continue;
+
+    // 数字・記号
+    if (
+      Object.prototype.hasOwnProperty.call(
+        symbolCodes,
+        ch
+      )
+    ) {
+      output += symbolCodes[ch];
+      continue;
+    }
+
+    // 濁点
+    let j = dakutenAfter.indexOf(ch);
+
+    if (j !== -1) {
+      const base = dakutenBefore[j];
+
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (table[r][c] === base) {
+            output += `${r}${c}71`;
+          }
+        }
+      }
+
+      continue;
+    }
+
+    // 半濁点
+    j = handakuAfter.indexOf(ch);
+
+    if (j !== -1) {
+      const base = handakuBefore[j];
+
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (table[r][c] === base) {
+            output += `${r}${c}73`;
+          }
+        }
+      }
+
+      continue;
+    }
+
+    // 小文字
+    j = smallAfter.indexOf(ch);
+
+    if (j !== -1) {
+      const base = smallBefore[j];
+
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 5; c++) {
+          if (table[r][c] === base) {
+            output += `${r}${c}93`;
+          }
+        }
+      }
+
+      continue;
+    }
+
+    // 伸ばし棒
+    if (ch === "ー") {
+      output += "91";
+      continue;
+    }
+
+    // 対応していない文字
+    output += "??";
+  }
+
+  // 最後のダミー
+  if (Math.floor(Math.random() * 2) === 0) {
+    output += dummy();
+  }
+
+  // 暗号文を逆順にする
+  return output.split("").reverse().join("");
+}
+
+// ========================================
+// 解読
+// ========================================
+
+function decodeText(raw) {
+  // 暗号文を元の順番に戻す
+  const code = raw.split("").reverse().join("");
+  const len = code.length;
+
+  let output = "";
+
+  // 先頭ダミー判定
+  if (len >= 2) {
+    const first = code.slice(0, 2);
+    const firstNum = parseInt(first, 10);
+    const firstCol = first[1] - "0";
+
+    if (
+      firstNum !== 71 &&
+      firstNum !== 73 &&
+      firstNum !== 91 &&
+      firstNum !== 93 &&
+      firstCol >= 5 &&
+      !reservedCodes.has(first)
+    ) {
+      output += "(ダミー)";
+    }
+  }
+
+  let last = "";
+  let hasLast = false;
+
+  for (let i = 0; i + 1 < len; i += 2) {
+
+    const temp = code.slice(i, i + 2);
+    const num = parseInt(temp, 10);
+
+    // 濁点
+    if (num === 71 && hasLast) {
+      const j = dakutenBefore.indexOf(last);
+
+      if (j !== -1) {
+        last = dakutenAfter[j];
+      }
+
+      continue;
+    }
+
+    // 半濁点
+    if (num === 73 && hasLast) {
+      const j = handakuBefore.indexOf(last);
+
+      if (j !== -1) {
+        last = handakuAfter[j];
+      }
+
+      continue;
+    }
+
+    // 小文字
+    if (num === 93 && hasLast) {
+      const j = smallBefore.indexOf(last);
+
+      if (j !== -1) {
+        last = smallAfter[j];
+      }
+
+      continue;
+    }
+
+    // 直前の文字を出力
+    if (hasLast) {
+      output += last;
+      hasLast = false;
+    }
+
+    // 伸ばし棒
+    if (num === 91) {
+      last = "ー";
+      hasLast = true;
+      continue;
+    }
+
+    // 数字・記号を解読
+    const symbol = Object.keys(symbolCodes).find(
+      key => symbolCodes[key] === temp
+    );
+
+    if (symbol !== undefined) {
+      output += symbol;
+      continue;
+    }
+
+    const row = temp[0] - "0";
+    const col = temp[1] - "0";
+
+    // ダミーコードを無視
+    if (col >= 5) {
+      continue;
+    }
+
+    // 五十音表から文字を取得
+    if (
+      row >= 0 && row < 10 &&
+      col >= 0 && col < 5 &&
+      table[row][col] !== ""
+    ) {
+      last = table[row][col];
+      hasLast = true;
+    }
+  }
+
+  // 最後の文字を出力
+  if (hasLast) {
+    output += last;
+  }
+
+  return output;
+}
+
+// ========================================
+// HTML要素の取得
+// ========================================
+
+const encodeTab = document.getElementById("encodeTab");
+const decodeTab = document.getElementById("decodeTab");
+const input = document.getElementById("input");
+const output = document.getElementById("output");
+const run = document.getElementById("run");
+const inputLabel = document.getElementById("inputLabel");
+const inputHint = document.getElementById("inputHint");
+const dummyOption = document.getElementById("dummyOption");
+const status = document.getElementById("status");
+
+// ========================================
+// モード切り替え
+// ========================================
+
+function setMode(next) {
+  mode = next;
+
+  const isEncode = mode === "encode";
+
+  encodeTab.classList.toggle("active", isEncode);
+  decodeTab.classList.toggle("active", !isEncode);
+
+  encodeTab.setAttribute(
+    "aria-selected",
+    String(isEncode)
+  );
+
+  decodeTab.setAttribute(
+    "aria-selected",
+    String(!isEncode)
+  );
+
+  inputLabel.textContent = isEncode
+    ? "暗号化する文章"
+    : "解読する暗号文";
+
+  input.placeholder = isEncode
+    ? "例：こんにちは123+456"
+    : "暗号文を貼り付け";
+
+  inputHint.textContent = isEncode
+    ? "ひらがな、数字、対応する記号を入力してください。"
+    : "このツールで作成した暗号文を貼り付けてください。";
+
+  dummyOption.classList.toggle(
+    "hidden",
+    !isEncode
+  );
+
+  run.textContent = isEncode
+    ? "暗号化する"
+    : "解読する";
+
+  output.value = "";
+  status.textContent = "結果がここに表示されます";
+}
+
+encodeTab.addEventListener("click", () => {
+  setMode("encode");
+});
+
+decodeTab.addEventListener("click", () => {
+  setMode("decode");
+});
+
+// ========================================
+// 暗号化・解読実行
+// ========================================
+
+run.addEventListener("click", () => {
+  const value = input.value;
+
+  if (!value) {
+    output.value = "";
+    status.textContent = "入力してください";
+    return;
+  }
+
+  if (mode === "encode") {
+    output.value = encodeText(
+      value,
+      document.getElementById("fileA").checked
+    );
+
+    status.textContent = "暗号化しました";
+
+  } else {
+    output.value = decodeText(value.trim());
+    status.textContent = "解読しました";
+  }
+});
+
+// ========================================
+// クリア
+// ========================================
+
+document.getElementById("clear").addEventListener(
+  "click",
+  () => {
+    input.value = "";
+    output.value = "";
+
+    status.textContent = "クリアしました";
+    input.focus();
+  }
+);
+
+// ========================================
+// 入力と結果を入れ替え
+// ========================================
+
+document.getElementById("swap").addEventListener(
+  "click",
+  () => {
+    const previousInput = input.value;
+    const previousOutput = output.value;
+
+    setMode(
+      mode === "encode" ? "decode" : "encode"
+    );
+
+    input.value = previousOutput;
+    output.value = previousInput;
+
+    status.textContent = "入力と結果を入れ替えました";
+  }
+);
+
+// ========================================
+// 結果をコピー
+// ========================================
+
+document.getElementById("copy").addEventListener(
+  "click",
+  async () => {
+    if (!output.value) {
+      status.textContent = "コピーする結果がありません";
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        output.value
+      );
+
+      status.textContent = "コピーしました";
+
+    } catch {
+      output.focus();
+      output.select();
+
+      status.textContent =
+        "結果を選択しました。Ctrl+Cでコピーしてください";
+    }
+  }
+);
+</script>
+</body>
+</html>
