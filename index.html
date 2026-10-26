@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -23,11 +24,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(
-    ellipse at top,
-    #151c2a,
-    var(--bg) 55%
-  );
+  background: radial-gradient(ellipse at top, #151c2a, var(--bg) 55%);
   color: var(--text);
   font-family: system-ui, sans-serif;
 }
@@ -194,6 +191,118 @@ button.primary {
   display: none;
 }
 
+/* 右上のPDF・設定ボタン */
+.top-buttons {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+}
+
+.pdf-button,
+.settings-button {
+  width: 58px;
+  height: 58px;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.pdf-button img,
+.settings-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.settings-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.pdf-button:hover,
+.settings-button:hover {
+  transform: scale(1.08);
+}
+
+/* 設定画面 */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 2000;
+}
+
+.settings-overlay.hidden {
+  display: none;
+}
+
+.settings-dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  border: 1px solid var(--accent);
+  border-radius: 18px;
+  background: linear-gradient(160deg, #171d29, #0e121b);
+  box-shadow: 0 18px 55px #0009;
+}
+
+.settings-dialog h2 {
+  margin: 0 0 20px;
+  color: var(--accent);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.setting-row:last-of-type {
+  border-bottom: 0;
+}
+
+.setting-description {
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.setting-toggle {
+  min-width: 76px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: #202838;
+  color: var(--text);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.setting-toggle.on {
+  color: #07120f;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.settings-close {
+  width: 100%;
+  margin-top: 20px;
+}
+
 @media (max-width: 520px) {
   .wrap {
     padding-top: 30px;
@@ -207,31 +316,19 @@ button.primary {
     align-items: flex-start;
     flex-direction: column;
   }
-}
 
-.pdf-button {
-  position: fixed;
-  top: 15px;
-  right: 15px;
-  width: 64px;
-  height: 64px;
-  display: block;
-  cursor: pointer;
-  z-index: 1000;
-  transition: transform 0.2s ease;
-}
+  .top-buttons {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+  }
 
-.pdf-button img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
+  .pdf-button,
+  .settings-button {
+    width: 46px;
+    height: 46px;
+  }
 }
-
-.pdf-button:hover {
-  transform: scale(1.1);
-}
-
 </style>
 </head>
 
@@ -247,43 +344,67 @@ button.primary {
     </p>
   </header>
 
-  <a href="kaidoku-hyo.pdf"
-   download="五十音暗号ツール_解読表.pdf"
-   class="pdf-button"
-   title="解読表をダウンロード">
-  <img src="pdf-button.png" alt="解読表PDFをダウンロード">
-</a>
+  <!-- PDFボタンと設定ボタン -->
+  <div class="top-buttons">
+    <a href="kaidoku-hyo.pdf"
+       download="五十音暗号ツール_解読表.pdf"
+       class="pdf-button"
+       title="解読表をダウンロード">
+      <img src="pdf-button.png" alt="解読表PDFをダウンロード">
+    </a>
+
+    <button class="settings-button" id="openSettings" type="button"
+            title="設定を開く" aria-label="設定を開く">
+      <img src="settings-button.png" alt="">
+    </button>
+  </div>
+
+  <!-- 設定画面 -->
+  <div class="settings-overlay hidden" id="settingsOverlay">
+    <section class="settings-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle">設定</h2>
+
+      <div class="setting-row">
+        <div>
+          <strong>逆順化</strong>
+          <div class="setting-description">
+            暗号化時に文字列全体を逆順にします。
+          </div>
+        </div>
+        <button class="setting-toggle on" id="reverseToggle"
+                type="button" aria-pressed="true">○</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <strong>ダミー付与</strong>
+          <div class="setting-description">
+            途中・末尾にランダムなダミーコードを追加します。
+            先頭ダミーは別設定です。
+          </div>
+        </div>
+        <button class="setting-toggle on" id="dummyToggle"
+                type="button" aria-pressed="true">○</button>
+      </div>
+
+      <button class="action settings-close" id="closeSettings"
+              type="button">閉じる</button>
+    </section>
+  </div>
 
   <section class="panel">
-
     <div class="tabs">
-      <button
-        class="tab active"
-        id="encodeTab"
-        type="button"
-        aria-selected="true"
-      >
-        暗号化
-      </button>
-
-      <button
-        class="tab"
-        id="decodeTab"
-        type="button"
-        aria-selected="false"
-      >
-        解読
-      </button>
+      <button class="tab active" id="encodeTab" type="button"
+              aria-selected="true">暗号化</button>
+      <button class="tab" id="decodeTab" type="button"
+              aria-selected="false">解読</button>
     </div>
 
-    <label id="inputLabel" for="input">
-      暗号化する文章
-    </label>
+    <label id="inputLabel" for="input">暗号化する文章</label>
 
-    <textarea
-      id="input"
-      placeholder="例：こんにちは123+456"
-    ></textarea>
+    <textarea id="input"
+              placeholder="例：こんにちは123+456"></textarea>
 
     <p class="hint" id="inputHint">
       ひらがな、数字、対応する記号を入力してください。
@@ -301,11 +422,9 @@ button.primary {
       <button class="action primary" id="run" type="button">
         暗号化する
       </button>
-
       <button class="action" id="swap" type="button">
         入力と結果を入れ替え
       </button>
-
       <button class="action" id="clear" type="button">
         クリア
       </button>
@@ -318,18 +437,14 @@ button.primary {
       </span>
     </div>
 
-    <textarea
-      id="output"
-      readonly
-      placeholder="ここに結果が表示されます"
-    ></textarea>
+    <textarea id="output" readonly
+              placeholder="ここに結果が表示されます"></textarea>
 
     <div class="actions">
       <button class="action" id="copy" type="button">
         結果をコピー
       </button>
     </div>
-
   </section>
 
   <p class="foot">
@@ -337,7 +452,6 @@ button.primary {
     数字・記号・ダミーコードに対応しています。<br>
     この暗号は簡易的な自作暗号です。
   </p>
-
 </main>
 
 <script>
@@ -359,7 +473,7 @@ const table = [
 ];
 
 // ========================================
-// 濁点
+// 濁点・半濁点・小文字
 // ========================================
 
 const dakutenBefore = [
@@ -376,16 +490,8 @@ const dakutenAfter = [
   "ば","び","ぶ","べ","ぼ"
 ];
 
-// ========================================
-// 半濁点
-// ========================================
-
 const handakuBefore = ["は","ひ","ふ","へ","ほ"];
 const handakuAfter  = ["ぱ","ぴ","ぷ","ぺ","ぽ"];
-
-// ========================================
-// 小文字
-// ========================================
 
 const smallBefore = [
   "あ","い","う","え","お",
@@ -412,7 +518,6 @@ const symbolCodes = {
   "7": "17",
   "8": "18",
   "9": "19",
-
   "+": "25",
   "-": "26",
   "(": "27",
@@ -424,16 +529,15 @@ const symbolCodes = {
   ">": "38"
 };
 
-// 数字・記号に予約したコード
-const reservedCodes = new Set(
-  Object.values(symbolCodes)
-);
-// 初期モードを暗号化に設定
+const reservedCodes = new Set(Object.values(symbolCodes));
 let mode = "encode";
+
+// 設定の初期値
+let reverseEnabled = true;
+let dummyEnabled = true;
 
 // ========================================
 // ダミー生成
-// 数字・記号用コードを除外する
 // ========================================
 
 function dummy() {
@@ -442,9 +546,7 @@ function dummy() {
   do {
     const row = Math.floor(Math.random() * 10);
     const col = 5 + Math.floor(Math.random() * 5);
-
     code = `${row}${col}`;
-
   } while (reservedCodes.has(code));
 
   return code;
@@ -458,15 +560,15 @@ function encodeText(input, fileA) {
   const chars = Array.from(input);
   let output = "";
 
-  // 先頭ダミー
+  // 先頭ダミーはFile Aが選択された場合に追加する
   if (fileA) {
     output += dummy();
   }
 
   for (let i = 0; i < chars.length; i++) {
-
-    // 途中ダミー
+    // 設定がONなら途中にダミーを追加
     if (
+      dummyEnabled &&
       i !== 0 &&
       Math.floor(Math.random() * 3) === 0
     ) {
@@ -480,7 +582,6 @@ function encodeText(input, fileA) {
     outer:
     for (let r = 0; r < 10; r++) {
       for (let c = 0; c < 5; c++) {
-
         if (table[r][c] === ch && ch !== "") {
           output += `${r}${c}`;
           found = true;
@@ -492,17 +593,12 @@ function encodeText(input, fileA) {
     if (found) continue;
 
     // 数字・記号
-    if (
-      Object.prototype.hasOwnProperty.call(
-        symbolCodes,
-        ch
-      )
-    ) {
+    if (Object.prototype.hasOwnProperty.call(symbolCodes, ch)) {
       output += symbolCodes[ch];
       continue;
     }
 
-    // 濁点
+    // 濁音
     let j = dakutenAfter.indexOf(ch);
 
     if (j !== -1) {
@@ -515,11 +611,10 @@ function encodeText(input, fileA) {
           }
         }
       }
-
       continue;
     }
 
-    // 半濁点
+    // 半濁音
     j = handakuAfter.indexOf(ch);
 
     if (j !== -1) {
@@ -532,7 +627,6 @@ function encodeText(input, fileA) {
           }
         }
       }
-
       continue;
     }
 
@@ -549,7 +643,6 @@ function encodeText(input, fileA) {
           }
         }
       }
-
       continue;
     }
 
@@ -563,13 +656,15 @@ function encodeText(input, fileA) {
     output += "??";
   }
 
-  // 最後のダミー
-  if (Math.floor(Math.random() * 2) === 0) {
+  // 設定がONなら末尾にもダミーを追加する場合がある
+  if (dummyEnabled && Math.floor(Math.random() * 2) === 0) {
     output += dummy();
   }
 
-  // 暗号文を逆順にする
-  return output.split("").reverse().join("");
+  // 逆順化設定
+  return reverseEnabled
+    ? output.split("").reverse().join("")
+    : output;
 }
 
 // ========================================
@@ -577,10 +672,11 @@ function encodeText(input, fileA) {
 // ========================================
 
 function decodeText(raw) {
-  // 暗号文を元の順番に戻す
-  const code = raw.split("").reverse().join("");
-  const len = code.length;
+  const code = reverseEnabled
+    ? raw.split("").reverse().join("")
+    : raw;
 
+  const len = code.length;
   let output = "";
 
   // 先頭ダミー判定
@@ -605,40 +701,27 @@ function decodeText(raw) {
   let hasLast = false;
 
   for (let i = 0; i + 1 < len; i += 2) {
-
     const temp = code.slice(i, i + 2);
     const num = parseInt(temp, 10);
 
     // 濁点
     if (num === 71 && hasLast) {
       const j = dakutenBefore.indexOf(last);
-
-      if (j !== -1) {
-        last = dakutenAfter[j];
-      }
-
+      if (j !== -1) last = dakutenAfter[j];
       continue;
     }
 
     // 半濁点
     if (num === 73 && hasLast) {
       const j = handakuBefore.indexOf(last);
-
-      if (j !== -1) {
-        last = handakuAfter[j];
-      }
-
+      if (j !== -1) last = handakuAfter[j];
       continue;
     }
 
     // 小文字
     if (num === 93 && hasLast) {
       const j = smallBefore.indexOf(last);
-
-      if (j !== -1) {
-        last = smallAfter[j];
-      }
-
+      if (j !== -1) last = smallAfter[j];
       continue;
     }
 
@@ -655,7 +738,7 @@ function decodeText(raw) {
       continue;
     }
 
-    // 数字・記号を解読
+    // 数字・記号
     const symbol = Object.keys(symbolCodes).find(
       key => symbolCodes[key] === temp
     );
@@ -669,9 +752,7 @@ function decodeText(raw) {
     const col = temp[1] - "0";
 
     // ダミーコードを無視
-    if (col >= 5) {
-      continue;
-    }
+    if (col >= 5) continue;
 
     // 五十音表から文字を取得
     if (
@@ -684,16 +765,13 @@ function decodeText(raw) {
     }
   }
 
-  // 最後の文字を出力
-  if (hasLast) {
-    output += last;
-  }
+  if (hasLast) output += last;
 
   return output;
 }
 
 // ========================================
-// HTML要素の取得
+// HTML要素
 // ========================================
 
 const encodeTab = document.getElementById("encodeTab");
@@ -706,27 +784,82 @@ const inputHint = document.getElementById("inputHint");
 const dummyOption = document.getElementById("dummyOption");
 const status = document.getElementById("status");
 
+const settingsOverlay = document.getElementById("settingsOverlay");
+const openSettings = document.getElementById("openSettings");
+const closeSettings = document.getElementById("closeSettings");
+const reverseToggle = document.getElementById("reverseToggle");
+const dummyToggle = document.getElementById("dummyToggle");
+
+// ○ / ✕ 表示の更新
+function updateToggle(button, enabled) {
+  button.textContent = enabled ? "○" : "✕";
+  button.classList.toggle("on", enabled);
+  button.setAttribute("aria-pressed", String(enabled));
+}
+
+// 設定画面を開く
+openSettings.addEventListener("click", () => {
+  settingsOverlay.classList.remove("hidden");
+});
+
+// 設定画面を閉じる
+closeSettings.addEventListener("click", () => {
+  settingsOverlay.classList.add("hidden");
+});
+
+// 背景を押して閉じる
+settingsOverlay.addEventListener("click", (event) => {
+  if (event.target === settingsOverlay) {
+    settingsOverlay.classList.add("hidden");
+  }
+});
+
+// Escapeキーで閉じる
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    settingsOverlay.classList.add("hidden");
+  }
+});
+
+// 逆順化の切り替え
+reverseToggle.addEventListener("click", () => {
+  if (
+    reverseEnabled &&
+    !confirm("逆順化を本当にOFFにしますか？")
+  ) {
+    return;
+  }
+
+  reverseEnabled = !reverseEnabled;
+  updateToggle(reverseToggle, reverseEnabled);
+});
+
+// ダミー付与の切り替え
+dummyToggle.addEventListener("click", () => {
+  if (
+    dummyEnabled &&
+    !confirm("ダミー付与を本当にOFFにしますか？")
+  ) {
+    return;
+  }
+
+  dummyEnabled = !dummyEnabled;
+  updateToggle(dummyToggle, dummyEnabled);
+});
+
 // ========================================
 // モード切り替え
 // ========================================
 
 function setMode(next) {
   mode = next;
-
   const isEncode = mode === "encode";
 
   encodeTab.classList.toggle("active", isEncode);
   decodeTab.classList.toggle("active", !isEncode);
 
-  encodeTab.setAttribute(
-    "aria-selected",
-    String(isEncode)
-  );
-
-  decodeTab.setAttribute(
-    "aria-selected",
-    String(!isEncode)
-  );
+  encodeTab.setAttribute("aria-selected", String(isEncode));
+  decodeTab.setAttribute("aria-selected", String(!isEncode));
 
   inputLabel.textContent = isEncode
     ? "暗号化する文章"
@@ -740,10 +873,7 @@ function setMode(next) {
     ? "ひらがな、数字、対応する記号を入力してください。"
     : "このツールで作成した暗号文を貼り付けてください。";
 
-  dummyOption.classList.toggle(
-    "hidden",
-    !isEncode
-  );
+  dummyOption.classList.toggle("hidden", !isEncode);
 
   run.textContent = isEncode
     ? "暗号化する"
@@ -753,13 +883,8 @@ function setMode(next) {
   status.textContent = "結果がここに表示されます";
 }
 
-encodeTab.addEventListener("click", () => {
-  setMode("encode");
-});
-
-decodeTab.addEventListener("click", () => {
-  setMode("decode");
-});
+encodeTab.addEventListener("click", () => setMode("encode"));
+decodeTab.addEventListener("click", () => setMode("decode"));
 
 // ========================================
 // 暗号化・解読実行
@@ -781,77 +906,49 @@ run.addEventListener("click", () => {
     );
 
     status.textContent = "暗号化しました";
-
   } else {
     output.value = decodeText(value.trim());
     status.textContent = "解読しました";
   }
 });
 
-// ========================================
 // クリア
-// ========================================
+document.getElementById("clear").addEventListener("click", () => {
+  input.value = "";
+  output.value = "";
+  status.textContent = "クリアしました";
+  input.focus();
+});
 
-document.getElementById("clear").addEventListener(
-  "click",
-  () => {
-    input.value = "";
-    output.value = "";
-
-    status.textContent = "クリアしました";
-    input.focus();
-  }
-);
-
-// ========================================
 // 入力と結果を入れ替え
-// ========================================
+document.getElementById("swap").addEventListener("click", () => {
+  const previousInput = input.value;
+  const previousOutput = output.value;
 
-document.getElementById("swap").addEventListener(
-  "click",
-  () => {
-    const previousInput = input.value;
-    const previousOutput = output.value;
+  setMode(mode === "encode" ? "decode" : "encode");
 
-    setMode(
-      mode === "encode" ? "decode" : "encode"
-    );
+  input.value = previousOutput;
+  output.value = previousInput;
+  status.textContent = "入力と結果を入れ替えました";
+});
 
-    input.value = previousOutput;
-    output.value = previousInput;
-
-    status.textContent = "入力と結果を入れ替えました";
-  }
-);
-
-// ========================================
 // 結果をコピー
-// ========================================
-
-document.getElementById("copy").addEventListener(
-  "click",
-  async () => {
-    if (!output.value) {
-      status.textContent = "コピーする結果がありません";
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(
-        output.value
-      );
-
-      status.textContent = "コピーしました";
-
-    } catch {
-      output.focus();
-      output.select();
-
-      status.textContent =
-        "結果を選択しました。Ctrl+Cでコピーしてください";
-    }
+document.getElementById("copy").addEventListener("click", async () => {
+  if (!output.value) {
+    status.textContent = "コピーする結果がありません";
+    return;
   }
-);
+
+  try {
+    await navigator.clipboard.writeText(output.value);
+    status.textContent = "コピーしました";
+  } catch {
+    output.focus();
+    output.select();
+    status.textContent =
+      "結果を選択しました。Ctrl+Cでコピーしてください";
+  }
+});
 </script>
 </body>
 </html>
