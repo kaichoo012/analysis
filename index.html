@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -329,10 +328,232 @@ button.primary {
     height: 46px;
   }
 }
+
+
+/* QRコード表示 */
+.qr-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.qr-section h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.qr-result {
+  margin-top: 20px;
+  padding: 22px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #080b11;
+  text-align: center;
+}
+
+.qr-result.hidden {
+  display: none;
+}
+
+#qrCode {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#qrCode img,
+#qrCode canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.qr-caption {
+  margin: 20px 0 8px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+#qrText {
+  min-height: 90px;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+/* 左上の履歴ボタン */
+.history-button {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: #111923;
+  color: var(--accent);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.history-button:hover {
+  background: #202838;
+}
+
+/* 履歴の背景 */
+.history-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #000b;
+}
+
+.history-overlay.hidden {
+  display: none;
+}
+
+/* 履歴のウィンドウ */
+.history-dialog {
+  width: min(680px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 22px;
+  border: 1px solid var(--accent);
+  border-radius: 18px;
+  background: #11151e;
+  box-shadow: 0 18px 55px #0009;
+}
+
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-heading h2 {
+  margin: 0;
+  color: var(--accent);
+}
+
+.history-close {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #202838;
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.history-empty {
+  padding: 25px 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.history-item {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #080b11;
+}
+
+.history-date {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.history-label {
+  margin: 10px 0 5px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.history-text {
+  width: 100%;
+  min-height: 65px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #11151e;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  font: 0.9rem/1.6 monospace;
+  resize: vertical;
+}
+
+.history-item .actions {
+  margin-top: 10px;
+}
+
+.history-item .action {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .history-button {
+    top: 8px;
+    left: 8px;
+    padding: 9px 11px;
+  }
+
+  .history-dialog {
+    padding: 16px;
+  }
+}
+.history-button {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.history-button img {
+  display: block;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
 </style>
 </head>
 
 <body>
+
+<button id="historyButton" class="history-button" type="button"
+        title="履歴">
+  <img src="history-button.png" alt="履歴">
+</button>
+
 <main class="wrap">
 
   <header>
@@ -445,6 +666,37 @@ button.primary {
         結果をコピー
       </button>
     </div>
+
+<!-- QRコード機能 -->
+<div class="qr-section">
+  <h2>QRコード</h2>
+
+  <p class="hint">
+    暗号文をQRコードに変換して共有できます。
+  </p>
+
+  <div class="actions">
+    <button class="action primary" id="generateQr" type="button">
+      QRコード生成
+    </button>
+
+    <button class="action" id="downloadQr" type="button">
+      QRコードを保存
+    </button>
+  </div>
+
+  <!-- QRコード表示エリア -->
+  <div id="qrResult" class="qr-result hidden">
+    <div id="qrCode"></div>
+
+    <p class="qr-caption">QRコードに含まれる暗号文</p>
+
+    <textarea id="qrText" readonly
+              aria-label="QRコードに含まれる暗号文"></textarea>
+  </div>
+</div>
+
+
   </section>
 
   <p class="foot">
@@ -453,6 +705,32 @@ button.primary {
     この暗号は簡易的な自作暗号です。
   </p>
 </main>
+
+<!-- 履歴一覧画面 -->
+<div id="historyOverlay" class="history-overlay hidden">
+  <section class="history-dialog" role="dialog"
+           aria-modal="true" aria-labelledby="historyTitle">
+
+    <div class="history-heading">
+      <h2 id="historyTitle">暗号化履歴</h2>
+      <button id="closeHistory" class="history-close"
+              type="button" aria-label="閉じる">✕</button>
+    </div>
+
+    <p class="hint">最近の暗号化履歴（最大50件）</p>
+
+    <div id="historyList" class="history-list"></div>
+
+    <div class="actions">
+      <button id="clearHistory" class="action" type="button">
+        履歴を全削除
+      </button>
+    </div>
+  </section>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
 // ========================================
@@ -784,6 +1062,269 @@ const inputHint = document.getElementById("inputHint");
 const dummyOption = document.getElementById("dummyOption");
 const status = document.getElementById("status");
 
+// ========================================
+// 暗号化履歴
+// ========================================
+
+const HISTORY_KEY = "gojuonCipherHistory";
+const MAX_HISTORY = 50;
+
+const historyButton = document.getElementById("historyButton");
+const historyOverlay = document.getElementById("historyOverlay");
+const closeHistory = document.getElementById("closeHistory");
+const historyList = document.getElementById("historyList");
+const clearHistory = document.getElementById("clearHistory");
+
+// ブラウザに保存された履歴を読み込む
+function getHistory() {
+  try {
+    const data = JSON.parse(
+      localStorage.getItem(HISTORY_KEY) || "[]"
+    );
+
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+// 履歴を保存する
+function saveHistory(history) {
+  try {
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history.slice(0, MAX_HISTORY))
+    );
+    return true;
+  } catch {
+    status.textContent =
+      "履歴を保存できません。ブラウザの保存容量を確認してください";
+    return false;
+  }
+}
+
+// 暗号化履歴を追加する
+function addHistory(original, encrypted) {
+  const history = getHistory();
+
+  history.unshift({
+    original: original,
+    encrypted: encrypted,
+    reverseEnabled: reverseEnabled,
+    dummyEnabled: dummyEnabled,
+    fileA: document.getElementById("fileA").checked,
+    date: new Date().toLocaleString("ja-JP")
+  });
+
+  saveHistory(history);
+}
+
+// テキストを安全に表示する要素を作る
+function createHistoryText(value) {
+  const area = document.createElement("textarea");
+  area.className = "history-text";
+  area.readOnly = true;
+  area.value = value;
+  return area;
+}
+
+// 履歴一覧を表示する
+function renderHistory() {
+  historyList.replaceChildren();
+
+  const history = getHistory();
+
+  if (history.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "history-empty";
+    empty.textContent = "まだ暗号化履歴がありません。";
+    historyList.appendChild(empty);
+    return;
+  }
+
+  history.forEach((item, index) => {
+    const card = document.createElement("article");
+    card.className = "history-item";
+
+    const date = document.createElement("div");
+    date.className = "history-date";
+    date.textContent = item.date || "";
+    card.appendChild(date);
+
+    const settings = document.createElement("div");
+    settings.className = "history-date";
+    settings.textContent =
+      "作成時の設定：逆順化 " + (item.reverseEnabled ? "ON" : "OFF") +
+      " ／ ダミー付与 " + (item.dummyEnabled ? "ON" : "OFF") +
+      " ／ 先頭ダミー(File A) " + (item.fileA ? "ON" : "OFF");
+    card.appendChild(settings);
+
+    const originalLabel = document.createElement("div");
+    originalLabel.className = "history-label";
+    originalLabel.textContent = "暗号化前の文章";
+    card.appendChild(originalLabel);
+    card.appendChild(createHistoryText(item.original));
+
+    const encryptedLabel = document.createElement("div");
+    encryptedLabel.className = "history-label";
+    encryptedLabel.textContent = "暗号化後の暗号文";
+    card.appendChild(encryptedLabel);
+    card.appendChild(createHistoryText(item.encrypted));
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const copyButton = document.createElement("button");
+    copyButton.className = "action primary";
+    copyButton.type = "button";
+    copyButton.textContent = "暗号文をコピー";
+
+    copyButton.addEventListener("click", async () => {
+      // まず標準のクリップボードAPIでコピーを試す
+      try {
+        await navigator.clipboard.writeText(item.encrypted);
+        status.textContent = "履歴の暗号文をコピーしました";
+        copyButton.textContent = "コピーしました";
+        return;
+      } catch (error) {
+        // APIが使えない環境では、選択して旧式のコピー方法を試す
+      }
+
+      const area = createHistoryText(item.encrypted);
+      card.appendChild(area);
+      area.focus();
+      area.select();
+      area.setSelectionRange(0, area.value.length);
+
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch (error) {
+        copied = false;
+      }
+
+      if (copied) {
+        status.textContent = "履歴の暗号文をコピーしました";
+        copyButton.textContent = "コピーしました";
+        area.remove();
+      } else {
+        status.textContent =
+          "自動コピーできませんでした。選択された暗号文を Ctrl+C でコピーしてください";
+      }
+    });
+
+    actions.appendChild(copyButton);
+    card.appendChild(actions);
+    historyList.appendChild(card);
+  });
+}
+
+// 履歴を開く
+historyButton.addEventListener("click", () => {
+  renderHistory();
+  historyOverlay.classList.remove("hidden");
+});
+
+// 履歴を閉じる
+closeHistory.addEventListener("click", () => {
+  historyOverlay.classList.add("hidden");
+});
+
+// 背景をクリックして閉じる
+historyOverlay.addEventListener("click", (event) => {
+  if (event.target === historyOverlay) {
+    historyOverlay.classList.add("hidden");
+  }
+});
+
+// Escapeキーで閉じる
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    historyOverlay.classList.add("hidden");
+  }
+});
+
+// 履歴を全削除
+clearHistory.addEventListener("click", () => {
+  if (!confirm("暗号化履歴をすべて削除しますか？")) {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+    status.textContent = "履歴をすべて削除しました";
+  } catch {
+    status.textContent = "履歴を削除できませんでした";
+  }
+});
+
+
+// ========================================
+// QRコード機能
+// ========================================
+
+const generateQr = document.getElementById("generateQr");
+const downloadQr = document.getElementById("downloadQr");
+const qrResult = document.getElementById("qrResult");
+const qrCode = document.getElementById("qrCode");
+const qrText = document.getElementById("qrText");
+
+// QRコード生成
+generateQr.addEventListener("click", () => {
+  const text = output.value.trim();
+
+  if (!text) {
+    status.textContent = "先に暗号化または解読を実行してください";
+    return;
+  }
+
+  if (typeof QRCode === "undefined") {
+    status.textContent =
+      "QRコードのライブラリを読み込めません。通信を確認してください";
+    return;
+  }
+
+  // 前のQRコードを消す
+  qrCode.innerHTML = "";
+
+  // QRコードを生成
+  new QRCode(qrCode, {
+    text: text,
+    width: 240,
+    height: 240,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  // QRコードの下に暗号文を表示
+  qrText.value = text;
+
+  // QRコード表示欄を表示
+  qrResult.classList.remove("hidden");
+
+  status.textContent = "QRコードを生成しました";
+});
+
+// QRコードをPNG画像として保存
+downloadQr.addEventListener("click", () => {
+  const canvas = qrCode.querySelector("canvas");
+
+  if (!canvas) {
+    status.textContent = "先にQRコードを生成してください";
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.download = "五十音暗号_QRコード.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+
+  status.textContent = "QRコードを保存しました";
+});
+
+
 const settingsOverlay = document.getElementById("settingsOverlay");
 const openSettings = document.getElementById("openSettings");
 const closeSettings = document.getElementById("closeSettings");
@@ -899,17 +1440,27 @@ run.addEventListener("click", () => {
     return;
   }
 
-  if (mode === "encode") {
-    output.value = encodeText(
-      value,
-      document.getElementById("fileA").checked
-    );
+  
+if (mode === "encode") {
+  // 暗号化前の文章を保存しておく
+  const originalText = value;
 
-    status.textContent = "暗号化しました";
-  } else {
-    output.value = decodeText(value.trim());
-    status.textContent = "解読しました";
-  }
+  // 暗号化を実行
+  output.value = encodeText(
+    originalText,
+    document.getElementById("fileA").checked
+  );
+
+  // 暗号化前と暗号化後をセットで履歴に保存
+  addHistory(originalText, output.value);
+
+  status.textContent = "暗号化しました";
+
+} else {
+  // 解読処理は今までどおり
+  output.value = decodeText(value.trim());
+  status.textContent = "解読しました";
+}
 });
 
 // クリア
@@ -950,5 +1501,7 @@ document.getElementById("copy").addEventListener("click", async () => {
   }
 });
 </script>
+
+
 </body>
 </html>
